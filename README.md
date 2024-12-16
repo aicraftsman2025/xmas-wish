@@ -2,6 +2,11 @@
 
 An interactive Christmas-themed display system that combines real-time wish displays with festive animations using Python, Pygame, and WebSocket technology.
 
+## 📸 Screenshots
+
+![Screenshot 1](screenshots/screenshot1.png)
+![Screenshot 2](screenshots/screenshot2.png)
+
 ## 🎄 Features
 
 - Real-time wish display system with WebSocket integration
