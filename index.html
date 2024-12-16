@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Wishes</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --bg-color: #0a192f;
+            --text-color: white;
+            --error-color: #ff4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            text-align: right;
+            margin-top: 0.25rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .error {
+            color: var(--error-color);
+            font-size: 0.8rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 2rem;
+            }
+
+            h2 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Send Christmas Wish</h2>
+        <form id="wishForm">
+            <div class="form-group">
+                <label for="name">Your Name:</label>
+                <input type="text" id="name" maxlength="30" required>
+                <div class="char-counter" id="nameCounter">0/30</div>
+                <div class="error" id="nameError">Name is required (max 30 characters)</div>
+            </div>
+            <div class="form-group">
+                <label for="message">Your Wish:</label>
+                <textarea id="message" maxlength="120" rows="4" required></textarea>
+                <div class="char-counter" id="messageCounter">0/120</div>
+                <div class="error" id="messageError">Message is required (max 120 characters)</div>
+            </div>
+            <div class="form-group">
+                <label for="item">Choose Item:</label>
+                <select id="item" required>
+                    <option value="gift">Gift 🎁</option>
+                    <option value="star">Star ⭐</option>
+                    <option value="pine">Pine 🌲</option>
+                </select>
+            </div>
+            <button type="submit" id="submitBtn">Send Wish</button>
+        </form>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://192.168.50.105:8080');
+        const form = document.getElementById('wishForm');
+        const nameInput = document.getElementById('name');
+        const messageInput = document.getElementById('message');
+        const nameCounter = document.getElementById('nameCounter');
+        const messageCounter = document.getElementById('messageCounter');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Character counter updates
+        function updateCounter(input, counter, maxLength) {
+            const length = input.value.length;
+            counter.textContent = `${length}/${maxLength}`;
+            
+            if (length > maxLength) {
+                counter.style.color = 'var(--error-color)';
+            } else {
+                counter.style.color = 'rgba(255, 255, 255, 0.7)';
+            }
+        }
+
+        nameInput.addEventListener('input', () => {
+            updateCounter(nameInput, nameCounter, 30);
+        });
+
+        messageInput.addEventListener('input', () => {
+            updateCounter(messageInput, messageCounter, 120);
+        });
+
+        // Form submission
+        form.onsubmit = function(e) {
+            e.preventDefault();
+            
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+            
+            if (name.length === 0 || name.length > 30) {
+                document.getElementById('nameError').style.display = 'block';
+                return;
+            }
+            
+            if (message.length === 0 || message.length > 120) {
+                document.getElementById('messageError').style.display = 'block';
+                return;
+            }
+
+            const wishData = {
+                name: name,
+                message: message,
+                item: document.getElementById('item').value
+            };
+            
+            submitBtn.disabled = true;
+            
+            try {
+                socket.send(JSON.stringify(wishData));
+                alert('Wish sent successfully!');
+                this.reset();
+                nameCounter.textContent = '0/30';
+                messageCounter.textContent = '0/120';
+            } catch (error) {
+                alert('Error sending wish. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        };
+
+        // Hide error messages when inputs change
+        nameInput.addEventListener('input', () => {
+            document.getElementById('nameError').style.display = 'none';
+        });
+
+        messageInput.addEventListener('input', () => {
+            document.getElementById('messageError').style.display = 'none';
+        });
+
+        // WebSocket connection status
+        socket.onopen = () => {
+            console.log('Connected to server');
+            submitBtn.disabled = false;
+        };
+
+        socket.onclose = () => {
+            console.log('Disconnected from server');
+            submitBtn.disabled = true;
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            submitBtn.disabled = true;
+        };
+    </script>
+</body>
+</html>
