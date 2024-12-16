@@ -4,8 +4,8 @@ An interactive Christmas-themed display system that combines real-time wish disp
 
 ## 📸 Screenshots
 
-![Screenshot 1](screenshots/screenshot1.png)
-![Screenshot 2](screenshots/screenshot2.png)
+![Main Game](screenshots/main-game.png)
+![Web Client to Enter Wishes](screenshots/web-ui.png)
 
 ## 🎄 Features
 
