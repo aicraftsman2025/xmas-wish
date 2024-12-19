@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Christmas Wishes</title>
+    <style>
+        .item-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            max-width: 600px;
+        }
+        .item-option {
+            border: 2px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .item-option:hover {
+            border-color: #ff4444;
+            background: #fff3f3;
+        }
+        .item-option.selected {
+            border-color: #ff0000;
+            background: #ffe6e6;
+        }
+        .item-sprite {
+            width: 32px;
+            height: 32px;
+            margin: 0 auto;
+            image-rendering: pixelated;
+            background-image: url("/static/christmas_sprites.png");
+            background-size: 128px 128px; /* Original sprite sheet size */
+        }
+        .wish-form {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #ff6666;
+        }
+    </style>
+</head>
+<body>
+    <div class="wish-form">
+        <h2>Send a Christmas Wish</h2>
+        <div class="item-selector">
+            <!-- Items will be dynamically added here -->
+        </div>
+        <input type="text" id="name" placeholder="Your Name" required>
+        <textarea id="message" placeholder="Your Wish Message" required></textarea>
+        <button onclick="sendWish()">Send Wish</button>
+    </div>
+
+    <script>
+        const itemConfig = {
+            "star_red": { name: "Red Star", sprite_pos: [0, 0] },
+            "bell": { name: "Bell", sprite_pos: [0, 1] },
+            "tree": { name: "Mini Tree", sprite_pos: [0, 2] },
+            "santa_hat": { name: "Santa Hat", sprite_pos: [0, 3] },
+            "star_gold": { name: "Gold Star", sprite_pos: [0, 4] },
+            "wreath": { name: "Wreath", sprite_pos: [0, 5] },
+            "gift_red": { name: "Red Gift", sprite_pos: [0, 6] },
+            "gift_green": { name: "Green Gift", sprite_pos: [0, 7] },
+            "gingerbread": { name: "Gingerbread", sprite_pos: [1, 0] },
+            "ornament": { name: "Ornament", sprite_pos: [1, 1] },
+            "holly": { name: "Holly", sprite_pos: [1, 2] },
+            "mistletoe": { name: "Mistletoe", sprite_pos: [1, 3] },
+            "snowflake": { name: "Snowflake", sprite_pos: [1, 4] },
+            "candy_cane": { name: "Candy Cane", sprite_pos: [1, 5] },
+            "sock": { name: "Stocking", sprite_pos: [1, 6] },
+            "candle": { name: "Candle", sprite_pos: [1, 7] }
+        };
+
+        let selectedItem = 'gift';
+
+        // Create item selector
+        const itemSelector = document.querySelector('.item-selector');
+        Object.entries(itemConfig).forEach(([id, config]) => {
+            const div = document.createElement('div');
+            div.className = 'item-option' + (id === 'gift' ? ' selected' : '');
+            div.onclick = () => selectItem(id);
+            
+            const sprite = document.createElement('div');
+            sprite.className = 'item-sprite';
+            updateSpritePosition(sprite, config.sprite_pos);
+            
+            const name = document.createElement('div');
+            name.textContent = config.name;
+            
+            div.appendChild(sprite);
+            div.appendChild(name);
+            itemSelector.appendChild(div);
+        });
+
+        function selectItem(id) {
+            document.querySelectorAll('.item-option').forEach(el => 
+                el.classList.remove('selected'));
+            document.querySelector(`.item-option:nth-child(${
+                Object.keys(itemConfig).indexOf(id) + 1})`).classList.add('selected');
+            selectedItem = id;
+        }
+
+        function sendWish() {
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
+            
+            if (!name || !message) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const ws = new WebSocket('ws://localhost:8080');
+            ws.onopen = () => {
+                ws.send(JSON.stringify({
+                    name: name,
+                    message: message,
+                    item: selectedItem
+                }));
+                alert('Wish sent!');
+                document.getElementById('name').value = '';
+                document.getElementById('message').value = '';
+            };
+        }
+
+        // Update sprite positioning calculation
+        function updateSpritePosition(sprite, pos) {
+            sprite.style.backgroundPosition = 
+                `-${pos[1] * 32}px -${pos[0] * 32}px`;
+        }
+    </script>
+</body>
+</html> 
