@@ -1,235 +1,232 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Christmas Wishes</title>
     <style>
-        :root {
-            --primary-color: #4CAF50;
-            --primary-hover: #45a049;
-            --bg-color: #0a192f;
-            --text-color: white;
-            --error-color: #ff4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
             min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #1a472a, #2d5a3f);
+            /* Christmas green gradient background */
+            background-image: 
+                url('/static/snowfall.png'),
+                linear-gradient(to bottom, #1a472a, #2d5a3f);
+            background-repeat: repeat;
+            color: #fff;
+        }
+
+        .wish-form {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .item-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* Default 4 columns for mobile */
+            gap: 8px;
+            margin: 20px 0;
+            width: 100%;
+        }
+
+        .item-option {
+            aspect-ratio: 1;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 8px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 1rem;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
-            border-radius: 10px;
+        .item-option:hover {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.2);
+        }
+
+        .item-option.selected {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .item-sprite {
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            background-image: url("/static/christmas_sprites_large.png");
+            background-size: 128px 128px;
+        }
+
+        input[type="text"], 
+        textarea {
             width: 100%;
-            max-width: 400px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-size: 1.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-color);
-            font-size: 1rem;
-        }
-
-        .char-counter {
-            font-size: 0.8rem;
-            text-align: right;
-            margin-top: 0.25rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .error {
-            color: var(--error-color);
-            font-size: 0.8rem;
-            margin-top: 0.25rem;
-            display: none;
+        input[type="text"]::placeholder, 
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.6);
         }
 
         button {
             width: 100%;
-            padding: 0.75rem;
-            background-color: var(--primary-color);
-            color: var(--text-color);
+            background: #ff4444;
+            color: white;
             border: none;
-            border-radius: 4px;
+            padding: 15px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background-color 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background 0.3s;
+            margin-top: 10px;
         }
 
         button:hover {
-            background-color: var(--primary-hover);
+            background: #ff6666;
         }
 
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+        h2 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
+        /* Media Queries for larger screens */
         @media (min-width: 768px) {
-            .container {
-                padding: 2rem;
+            .wish-form {
+                max-width: 500px;
+                padding: 30px;
             }
 
-            h2 {
-                font-size: 1.75rem;
+            .item-selector {
+                gap: 12px;
             }
+
+            .item-option {
+                padding: 12px;
+            }
+
+            button {
+                padding: 15px 30px;
+            }
+        }
+
+        /* Add some Christmas decorations */
+        .wish-form::before {
+            content: '🎄';
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            font-size: 30px;
+        }
+
+        .wish-form::after {
+            content: '🎅';
+            position: absolute;
+            top: -20px;
+            right: 20px;
+            font-size: 30px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Send Christmas Wish</h2>
-        <form id="wishForm">
-            <div class="form-group">
-                <label for="name">Your Name:</label>
-                <input type="text" id="name" maxlength="30" required>
-                <div class="char-counter" id="nameCounter">0/30</div>
-                <div class="error" id="nameError">Name is required (max 30 characters)</div>
-            </div>
-            <div class="form-group">
-                <label for="message">Your Wish:</label>
-                <textarea id="message" maxlength="120" rows="4" required></textarea>
-                <div class="char-counter" id="messageCounter">0/120</div>
-                <div class="error" id="messageError">Message is required (max 120 characters)</div>
-            </div>
-            <div class="form-group">
-                <label for="item">Choose Item:</label>
-                <select id="item" required>
-                    <option value="gift">Gift 🎁</option>
-                    <option value="star">Star ⭐</option>
-                    <option value="pine">Pine 🌲</option>
-                </select>
-            </div>
-            <button type="submit" id="submitBtn">Send Wish</button>
-        </form>
+    <div class="wish-form">
+        <h2>✨ Send a Christmas Wish ✨</h2>
+        <div class="item-selector">
+            <!-- Items will be dynamically added here -->
+        </div>
+        <input type="text" id="name" placeholder="Your Name" required>
+        <textarea id="message" placeholder="Your Wish Message" required rows="4"></textarea>
+        <button onclick="sendWish()">Send Christmas Wish 🎄</button>
     </div>
 
     <script>
-        const socket = new WebSocket('ws://192.168.50.105:8080');
-        const form = document.getElementById('wishForm');
-        const nameInput = document.getElementById('name');
-        const messageInput = document.getElementById('message');
-        const nameCounter = document.getElementById('nameCounter');
-        const messageCounter = document.getElementById('messageCounter');
-        const submitBtn = document.getElementById('submitBtn');
+        const itemConfig = {
+            "bell": { name: "Bell", sprite_pos: [0, 0] },
+            "tree": { name: "Mini Tree", sprite_pos: [0, 1] },
+            "santa_hat": { name: "Santa Hat", sprite_pos: [0, 2] },
+            "star": { name: "Star", sprite_pos: [0, 3] },
+            "wreath": { name: "Wreath", sprite_pos: [1, 0] },
+            "gift": { name: "Gift", sprite_pos: [1, 1] },
+            "gingerbread": { name: "Gingerbread", sprite_pos: [1, 2] },
+            "ornament": { name: "Ornament", sprite_pos: [1, 3] },
+            "holly": { name: "Holly", sprite_pos: [2, 0] },
+            "mistletoe": { name: "Mistletoe", sprite_pos: [2, 1] },
+            "snowflake": { name: "Snowflake", sprite_pos: [2, 2] },
+            "candy_cane": { name: "Candy Cane", sprite_pos: [2, 3] },
+            "sock": { name: "Stocking", sprite_pos: [3, 0] },
+            "candle": { name: "Candle", sprite_pos: [3, 1] },
+            "present": { name: "Present", sprite_pos: [3, 2] },
+            "bauble": { name: "Bauble", sprite_pos: [3, 3] }
+        };
 
-        // Character counter updates
-        function updateCounter(input, counter, maxLength) {
-            const length = input.value.length;
-            counter.textContent = `${length}/${maxLength}`;
+        let selectedItem = 'gift';
+
+        // Create item selector
+        const itemSelector = document.querySelector('.item-selector');
+        Object.entries(itemConfig).forEach(([id, config]) => {
+            const div = document.createElement('div');
+            div.className = 'item-option' + (id === 'gift' ? ' selected' : '');
+            div.onclick = () => selectItem(id);
             
-            if (length > maxLength) {
-                counter.style.color = 'var(--error-color)';
-            } else {
-                counter.style.color = 'rgba(255, 255, 255, 0.7)';
-            }
+            const sprite = document.createElement('div');
+            sprite.className = 'item-sprite';
+            const [row, col] = config.sprite_pos;
+            sprite.style.backgroundPosition = `-${col * 32}px -${row * 32}px`;
+            
+            div.appendChild(sprite);
+            itemSelector.appendChild(div);
+        });
+
+        function selectItem(id) {
+            document.querySelectorAll('.item-option').forEach(el => 
+                el.classList.remove('selected'));
+            document.querySelector(`.item-option:nth-child(${
+                Object.keys(itemConfig).indexOf(id) + 1})`).classList.add('selected');
+            selectedItem = id;
         }
 
-        nameInput.addEventListener('input', () => {
-            updateCounter(nameInput, nameCounter, 30);
-        });
-
-        messageInput.addEventListener('input', () => {
-            updateCounter(messageInput, messageCounter, 120);
-        });
-
-        // Form submission
-        form.onsubmit = function(e) {
-            e.preventDefault();
+        function sendWish() {
+            const name = document.getElementById('name').value;
+            const message = document.getElementById('message').value;
             
-            const name = nameInput.value.trim();
-            const message = messageInput.value.trim();
-            
-            if (name.length === 0 || name.length > 30) {
-                document.getElementById('nameError').style.display = 'block';
-                return;
-            }
-            
-            if (message.length === 0 || message.length > 120) {
-                document.getElementById('messageError').style.display = 'block';
+            if (!name || !message) {
+                alert('Please fill in all fields');
                 return;
             }
 
-            const wishData = {
-                name: name,
-                message: message,
-                item: document.getElementById('item').value
+            const ws = new WebSocket('ws://localhost:8080');
+            ws.onopen = () => {
+                ws.send(JSON.stringify({
+                    name: name,
+                    message: message,
+                    item: selectedItem
+                }));
+                alert('Wish sent!');
+                document.getElementById('name').value = '';
+                document.getElementById('message').value = '';
             };
-            
-            submitBtn.disabled = true;
-            
-            try {
-                socket.send(JSON.stringify(wishData));
-                alert('Wish sent successfully!');
-                this.reset();
-                nameCounter.textContent = '0/30';
-                messageCounter.textContent = '0/120';
-            } catch (error) {
-                alert('Error sending wish. Please try again.');
-            } finally {
-                submitBtn.disabled = false;
-            }
-        };
-
-        // Hide error messages when inputs change
-        nameInput.addEventListener('input', () => {
-            document.getElementById('nameError').style.display = 'none';
-        });
-
-        messageInput.addEventListener('input', () => {
-            document.getElementById('messageError').style.display = 'none';
-        });
-
-        // WebSocket connection status
-        socket.onopen = () => {
-            console.log('Connected to server');
-            submitBtn.disabled = false;
-        };
-
-        socket.onclose = () => {
-            console.log('Disconnected from server');
-            submitBtn.disabled = true;
-        };
-
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            submitBtn.disabled = true;
-        };
+        }
     </script>
 </body>
-</html>
+</html> 

@@ -94,37 +94,53 @@ class Santa:
                 self.time = 0
 
 class FloatingText:
-    def __init__(self, text, x, y, color):
+    def __init__(self, text, x, y, color, index=0):
         self.original_text = text
         self.x = x
         self.y = y
+        self.target_y = y + (index * 50)
         self.color = color
         self.alpha = 255
         self.scale = 1.0
         self.time = 0
-        # Sử dụng font hỗ trợ UTF-8
+        self.fade_speed = 0.5
+        self.display_time = 180
+        self.move_speed = 0.1
         try:
-            self.font = pygame.font.Font("assets/NotoSans-Regular.ttf", 24)
+            self.font = pygame.font.Font("assets/NotoSans-Regular.ttf", 32)
         except:
             print("Fallback to default font")
-            self.font = pygame.font.Font(None, 24)
+            self.font = pygame.font.Font(None, 32)
         
     def update(self):
         self.time += 0.05
         self.scale = 1.0 + 0.1 * math.sin(self.time * 2)
-        self.alpha = max(0, self.alpha - 1)
+        
+        if self.display_time > 0:
+            self.display_time -= 1
+        else:
+            self.alpha = max(0, self.alpha - self.fade_speed)
+        
+        if abs(self.y - self.target_y) > 0.1:
+            self.y += (self.target_y - self.y) * self.move_speed
+        
         return self.alpha > 0
         
     def draw(self, screen):
-        size = int(24 * self.scale)
+        # Create text with current scale
+        size = int(32 * self.scale)
         try:
             font = pygame.font.Font("assets/NotoSans-Regular.ttf", size)
         except:
             font = pygame.font.Font(None, size)
+        
         text_surface = font.render(self.original_text, True, self.color)
         text_surface.set_alpha(self.alpha)
         text_rect = text_surface.get_rect(center=(self.x, self.y))
         screen.blit(text_surface, text_rect)
+
+    def set_position(self, new_index):
+        self.target_y = 50 + (new_index * 50)
 
 class Item:
     def __init__(self, x, y, item_type, sender_name="Anonymous"):
@@ -223,6 +239,71 @@ class WishQueue:
         self.processing = False
         self.current_wish = None
 
+class LightParticle:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.color = (255, 255, 100)  # Bright yellow for star
+        self.size = random.uniform(1, 3)  # Slightly larger for star points
+        self.lifetime = random.randint(40, 100)
+        self.alpha = 255
+        self.fade_speed = random.uniform(1.5, 3)
+        self.angle = random.uniform(0, 2 * math.pi)
+        self.speed = random.uniform(0.3, 0.6)
+        self.rotation = random.uniform(0, 360)
+        self.spin_speed = random.uniform(-2, 2)
+
+    def update(self):
+        # Move in a slight spiral pattern
+        self.x += math.cos(self.angle) * self.speed
+        self.y += math.sin(self.angle) * self.speed
+        self.angle += 0.02
+        
+        # Rotate the star
+        self.rotation += self.spin_speed
+        
+        # Fade out
+        self.alpha = max(0, self.alpha - self.fade_speed)
+        self.lifetime -= 1
+        
+        return self.lifetime > 0
+
+    def draw(self, screen):
+        # Create a surface for the star with alpha
+        surf = pygame.Surface((int(self.size * 6), int(self.size * 6)), pygame.SRCALPHA)
+        center = (int(self.size * 3), int(self.size * 3))
+        
+        # Draw a 5-pointed star
+        points = []
+        for i in range(5):
+            # Outer points
+            angle = math.radians(self.rotation + i * 72)
+            points.append((
+                center[0] + math.cos(angle) * self.size * 3,
+                center[1] + math.sin(angle) * self.size * 3
+            ))
+            # Inner points
+            angle = math.radians(self.rotation + i * 72 + 36)
+            points.append((
+                center[0] + math.cos(angle) * self.size,
+                center[1] + math.sin(angle) * self.size
+            ))
+        
+        # Draw the star with glow effect
+        for offset in range(3, 0, -1):
+            alpha = int(self.alpha * (offset / 3))
+            pygame.draw.polygon(
+                surf,
+                (*self.color, alpha),
+                points,
+                max(1, offset)
+            )
+        
+        screen.blit(surf, (
+            int(self.x - self.size * 3),
+            int(self.y - self.size * 3)
+        ))
+
 async def game_loop():
     global screen, GROUND_Y, WINDOW_WIDTH, WINDOW_HEIGHT, ground_shape
     global current_sender_name, current_selected_item, is_fullscreen
@@ -233,6 +314,12 @@ async def game_loop():
     floating_texts = []
     snow_particles = create_snow_particles()
     wish_queue = WishQueue()
+    light_particles = []
+    tree_rect = pygame.Rect(WINDOW_WIDTH//2 - 100, WINDOW_HEIGHT - 350, 200, 300)
+    last_particle_time = 0
+    PARTICLE_SPAWN_DELAY = 120  # ms
+    active_wish_count = 0
+    MAX_VISIBLE_WISHES = 3
     
     running = True
     while running:
@@ -242,7 +329,7 @@ async def game_loop():
             wish_queue.add_wish(wish)
 
         # Xử lý wish tiếp theo nếu Santa không active
-        if not santa_obj.active:
+        if not santa_obj.active and active_wish_count < MAX_VISIBLE_WISHES:
             next_wish = wish_queue.get_next_wish()
             if next_wish:
                 current_sender_name = next_wish['name']
@@ -255,10 +342,13 @@ async def game_loop():
                 santa_obj.time = 0
                 
                 floating_texts.append(
-                    FloatingText(next_wish['message'], 
-                               WINDOW_WIDTH//2, 
-                               50, 
-                               (255, 0, 0))
+                    FloatingText(
+                        f"{next_wish['name']}: {next_wish['message']}", 
+                        WINDOW_WIDTH//2, 
+                        50, 
+                        (255, 0, 0),
+                        len(floating_texts)
+                    )
                 )
 
         for event in pygame.event.get():
@@ -282,6 +372,15 @@ async def game_loop():
                         ground_shape.friction = 0.7
                         ground_shape.elasticity = 0.5
                         space.add(ground_shape)
+                        
+                        # Cập nhật vị trí tree_rect cho particles
+                        tree_rect = pygame.Rect(WINDOW_WIDTH//2 - 100, 
+                                              WINDOW_HEIGHT - 350, 
+                                              200, 300)
+                        
+                        # Xóa particles cũ và tạo mới theo kích thước mới
+                        light_particles.clear()
+                        
                     else:
                         screen = pygame.display.set_mode(original_size)
                         WINDOW_WIDTH, WINDOW_HEIGHT = original_size
@@ -296,6 +395,14 @@ async def game_loop():
                         ground_shape.friction = 0.7
                         ground_shape.elasticity = 0.5
                         space.add(ground_shape)
+                        
+                        # Cập nhật vị trí tree_rect cho particles
+                        tree_rect = pygame.Rect(WINDOW_WIDTH//2 - 100, 
+                                              WINDOW_HEIGHT - 350, 
+                                              200, 300)
+                        
+                        # Xóa particles cũ và tạo mới theo kích thước mới
+                        light_particles.clear()
 
         draw_gradient_background(screen)
         pygame.draw.rect(screen, DARK_BLUE, (0, GROUND_Y, WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -329,7 +436,30 @@ async def game_loop():
         for item in items:
             item.draw(screen, item_images[item.item_type])
         
-        floating_texts = [text for text in floating_texts if text.update()]
+        new_floating_texts = []
+        for i, text in enumerate(floating_texts):
+            if text.update():
+                text.set_position(i)
+                new_floating_texts.append(text)
+        floating_texts = new_floating_texts
+
+        # Cập nhật và vẽ light particles
+        current_time = pygame.time.get_ticks()
+        if current_time - last_particle_time > PARTICLE_SPAWN_DELAY:
+            # Tạo particle mới xung quanh cây thông với vị trí tương đối
+            for _ in range(2):
+                # Tính toán vị trí dựa trên tree_rect hiện tại
+                x = random.randint(tree_rect.left + 20, tree_rect.right - 20)
+                y = random.randint(tree_rect.top + 50, tree_rect.bottom - 50)
+                light_particles.append(LightParticle(x, y))
+            last_particle_time = current_time
+
+        # Cập nhật và vẽ các particles
+        light_particles = [p for p in light_particles if p.update()]
+        for particle in light_particles:
+            particle.draw(screen)
+
+        # After updating floating texts
         for text in floating_texts:
             text.draw(screen)
 
