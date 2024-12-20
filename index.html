@@ -2,162 +2,58 @@
 <html>
 <head>
     <title>Christmas Wishes</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(to bottom, #1a472a, #2d5a3f);
-            /* Christmas green gradient background */
-            background-image: 
-                url('/static/snowfall.png'),
-                linear-gradient(to bottom, #1a472a, #2d5a3f);
-            background-repeat: repeat;
-            color: #fff;
-        }
-
-        .wish-form {
-            max-width: 100%;
-            margin: 0 auto;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .item-selector {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); /* Default 4 columns for mobile */
-            gap: 8px;
-            margin: 20px 0;
-            width: 100%;
-        }
-
-        .item-option {
-            aspect-ratio: 1;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .item-option:hover {
-            border-color: #ff4444;
-            background: rgba(255, 68, 68, 0.2);
-        }
-
-        .item-option.selected {
-            border-color: #ff0000;
-            background: rgba(255, 0, 0, 0.2);
-            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
-        }
-
-        .item-sprite {
-            width: 32px;
-            height: 32px;
-            image-rendering: pixelated;
-            background-image: url("/static/christmas_sprites_large.png");
-            background-size: 128px 128px;
-        }
-
-        input[type="text"], 
-        textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        input[type="text"]::placeholder, 
-        textarea::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        button {
-            width: 100%;
-            background: #ff4444;
-            color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.3s;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: #ff6666;
-        }
-
-        h2 {
-            text-align: center;
-            color: #fff;
-            margin-bottom: 20px;
-            font-size: 24px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Media Queries for larger screens */
-        @media (min-width: 768px) {
-            .wish-form {
-                max-width: 500px;
-                padding: 30px;
-            }
-
-            .item-selector {
-                gap: 12px;
-            }
-
-            .item-option {
-                padding: 12px;
-            }
-
-            button {
-                padding: 15px 30px;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    backgroundImage: {
+                        'xmas-gradient': 'linear-gradient(to bottom, #1a472a, #2d5a3f)',
+                    }
+                }
             }
         }
-
-        /* Add some Christmas decorations */
-        .wish-form::before {
-            content: '🎄';
-            position: absolute;
-            top: -20px;
-            left: 20px;
-            font-size: 30px;
-        }
-
-        .wish-form::after {
-            content: '🎅';
-            position: absolute;
-            top: -20px;
-            right: 20px;
-            font-size: 30px;
-        }
-    </style>
+    </script>
 </head>
-<body>
-    <div class="wish-form">
-        <h2>✨ Send a Christmas Wish ✨</h2>
-        <div class="item-selector">
+<body class="m-0 p-5 min-h-screen font-sans bg-xmas-gradient bg-repeat text-white">
+    <div class="wish-form max-w-full md:max-w-lg mx-auto p-5 md:p-8 bg-white/10 rounded-xl backdrop-blur-sm shadow-lg relative">
+        <h2 class="text-center text-2xl mb-5 text-white font-bold">✨ Send a Christmas Wish ✨</h2>
+        
+        <div class="item-selector grid grid-cols-4 gap-2 md:gap-3 my-5 w-full">
             <!-- Items will be dynamically added here -->
         </div>
-        <input type="text" id="name" placeholder="Your Name" required>
-        <textarea id="message" placeholder="Your Wish Message" required rows="4"></textarea>
-        <button onclick="sendWish()">Send Christmas Wish 🎄</button>
+
+        <div class="relative mb-4">
+            <input type="text" 
+                   id="name" 
+                   placeholder="Your Name" 
+                   maxlength="30" 
+                   required
+                   class="w-full p-3 mb-2 border border-white/30 rounded-lg bg-white/10 text-white placeholder-white/60 text-base">
+            <div id="nameCounter" 
+                 class="absolute right-2 -bottom-5 text-xs text-white/70">0/30</div>
+        </div>
+
+        <div class="relative mb-6">
+            <textarea id="message" 
+                     placeholder="Your Wish Message" 
+                     maxlength="120" 
+                     required 
+                     rows="4"
+                     class="w-full p-3 mb-2 border border-white/30 rounded-lg bg-white/10 text-white placeholder-white/60 text-base"></textarea>
+            <div id="messageCounter" 
+                 class="absolute right-2 -bottom-5 text-xs text-white/70">0/120</div>
+        </div>
+
+        <button onclick="sendWish()" 
+                class="w-full bg-red-500 hover:bg-red-400 text-white border-none py-4 px-5 rounded-lg cursor-pointer text-base font-bold transition-colors mt-2">
+            Send Christmas Wish 🎄
+        </button>
+
+        <!-- Christmas decorations -->
+        <div class="absolute -top-5 left-5 text-3xl">🎄</div>
+        <div class="absolute -top-5 right-5 text-3xl">🎅</div>
     </div>
 
     <script>
@@ -186,11 +82,16 @@
         const itemSelector = document.querySelector('.item-selector');
         Object.entries(itemConfig).forEach(([id, config]) => {
             const div = document.createElement('div');
-            div.className = 'item-option' + (id === 'gift' ? ' selected' : '');
+            div.className = `aspect-square border-2 border-white/30 p-2 flex items-center justify-center cursor-pointer rounded-lg transition-all duration-300 bg-white/10 
+                           hover:border-red-500 hover:bg-red-500/20 
+                           ${id === 'gift' ? 'selected border-red-500 bg-red-500/20' : ''}`;
             div.onclick = () => selectItem(id);
             
             const sprite = document.createElement('div');
-            sprite.className = 'item-sprite';
+            sprite.className = 'w-8 h-8 bg-no-repeat';
+            sprite.style.imageRendering = 'pixelated';
+            sprite.style.backgroundImage = 'url("/static/christmas_sprites_large.png")';
+            sprite.style.backgroundSize = '128px 128px';
             const [row, col] = config.sprite_pos;
             sprite.style.backgroundPosition = `-${col * 32}px -${row * 32}px`;
             
@@ -199,19 +100,52 @@
         });
 
         function selectItem(id) {
-            document.querySelectorAll('.item-option').forEach(el => 
-                el.classList.remove('selected'));
-            document.querySelector(`.item-option:nth-child(${
-                Object.keys(itemConfig).indexOf(id) + 1})`).classList.add('selected');
+            document.querySelectorAll('.item-selector > div').forEach(el => {
+                el.classList.remove('selected', 'border-red-500', 'bg-red-500/20');
+            });
+            document.querySelector(`.item-selector > div:nth-child(${
+                Object.keys(itemConfig).indexOf(id) + 1})`).classList.add(
+                    'selected', 'border-red-500', 'bg-red-500/20');
             selectedItem = id;
         }
 
+        // Add character counter functionality
+        function updateCharCounter(input, counter) {
+            const current = input.value.length;
+            const max = input.maxLength;
+            const counterEl = document.getElementById(counter);
+            counterEl.textContent = `${current}/${max}`;
+            
+            if (current >= max) {
+                counterEl.className = 'absolute right-2 -bottom-5 text-xs text-red-500';
+            } else if (current >= max * 0.8) {
+                counterEl.className = 'absolute right-2 -bottom-5 text-xs text-yellow-500';
+            } else {
+                counterEl.className = 'absolute right-2 -bottom-5 text-xs text-white/70';
+            }
+        }
+
+        // Add event listeners for input fields
+        document.getElementById('name').addEventListener('input', function() {
+            updateCharCounter(this, 'nameCounter');
+        });
+
+        document.getElementById('message').addEventListener('input', function() {
+            updateCharCounter(this, 'messageCounter');
+        });
+
+        // Update sendWish function with validation
         function sendWish() {
-            const name = document.getElementById('name').value;
-            const message = document.getElementById('message').value;
+            const name = document.getElementById('name').value.trim();
+            const message = document.getElementById('message').value.trim();
             
             if (!name || !message) {
                 alert('Please fill in all fields');
+                return;
+            }
+
+            if (name.length > 30 || message.length > 120) {
+                alert('Please respect the character limits');
                 return;
             }
 
@@ -225,6 +159,11 @@
                 alert('Wish sent!');
                 document.getElementById('name').value = '';
                 document.getElementById('message').value = '';
+                // Reset counters
+                document.getElementById('nameCounter').textContent = '0/30';
+                document.getElementById('messageCounter').textContent = '0/120';
+                document.getElementById('nameCounter').className = 'char-counter';
+                document.getElementById('messageCounter').className = 'char-counter';
             };
         }
     </script>
