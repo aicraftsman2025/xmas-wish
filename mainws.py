@@ -9,6 +9,8 @@ import websockets
 import json
 import subprocess
 import os
+import threading
+from datetime import datetime
 
 # Khởi tạo pygame
 pygame.init()
@@ -17,13 +19,15 @@ mixer.init()
 # Sound setup
 mixer.init()
 try:
+    # Set higher quality audio
+    pygame.mixer.pre_init(44100, -16, 2, 2048)
+    pygame.mixer.init()
+    
     background_music = mixer.Sound("assets/sounds/xmas-theme-song.mp3")
-    #gift_drop_sound = mixer.Sound("assets/sounds/gift_drop.wav")
     santa_sound = mixer.Sound("assets/sounds/santa_bell.mp3")
     
     # Adjust volumes individually
     background_music.set_volume(0.2)
-    #gift_drop_sound.set_volume(0.1)  # Lower volume for less harsh sound
     santa_sound.set_volume(0.1)
     
     background_music.play(-1)  # -1 means loop forever
@@ -465,6 +469,7 @@ class LightParticle:
             int(self.y - self.size * 3)
         ))
 
+
 class StreamManager:
     def __init__(self, width, height, fps=30):
         self.width = width
@@ -480,41 +485,146 @@ class StreamManager:
         command = [
             'ffmpeg',
             '-y',
+            
+            # Video input (primary input)
             '-f', 'rawvideo',
             '-vcodec', 'rawvideo',
             '-pix_fmt', 'rgb24',
             '-s', f'{self.width}x{self.height}',
             '-r', f'{self.fps}',
             '-i', '-',
-            '-f', 'alsa',  # for audio input
-            '-i', 'default',
+            
+            # Audio input (secondary input)
+            '-f', 'avfoundation',
+            '-audio_device_index', '0',
+            '-i', '',  # empty string for audio-only input
+            
+            # Map inputs explicitly
+            '-map', '0:v:0',  # First input (video)
+            '-map', '1:a:0',  # Second input (audio)
+            
+            # Output settings
             '-c:v', 'libx264',
             '-preset', 'ultrafast',
+            '-pix_fmt', 'yuv420p',
             '-c:a', 'aac',
+            '-b:a', '192k',
+            '-ar', '44100',
+            '-threads', '4',
+            
+            # Output format and destination
             '-f', 'flv',
             f'rtmp://a.rtmp.youtube.com/live2/{youtube_key}'
         ]
 
-        self.process = subprocess.Popen(command, stdin=subprocess.PIPE)
-        self.is_streaming = True
-
-    def stream_frame(self, surface):
-        if not self.is_streaming:
-            return
-            
-        # Get raw pixels from pygame surface
-        pixels = pygame.image.tostring(surface, 'RGB')
         try:
-            # Write frame to ffmpeg process
-            self.process.stdin.write(pixels)
-        except:
+            self.process = subprocess.Popen(
+                command, 
+                stdin=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=10**8
+            )
+            self.is_streaming = True
+            print("Streaming started with audio capture from BlackHole")
+            
+            # Monitor FFmpeg output
+            def monitor_ffmpeg():
+                while self.process and self.is_streaming:
+                    line = self.process.stderr.readline()
+                    if line:
+                        print(f"FFmpeg: {line.decode().strip()}")
+            
+            threading.Thread(target=monitor_ffmpeg, daemon=True).start()
+            
+        except Exception as e:
+            print(f"Error starting stream: {e}")
             self.stop_stream()
 
     def stop_stream(self):
         if self.process:
-            self.process.terminate()
-            self.process = None
+            try:
+                self.process.stdin.close()
+                self.process.terminate()
+                self.process.wait(timeout=5)
+            except:
+                self.process.kill()
+            finally:
+                self.process = None
         self.is_streaming = False
+        print("Streaming stopped")
+
+    def stream_frame(self, surface):
+        if not self.is_streaming or not self.process:
+            return
+            
+        try:
+            pixels = pygame.image.tostring(surface, 'RGB')
+            self.process.stdin.write(pixels)
+            self.process.stdin.flush()
+        except IOError as e:
+            print(f"Streaming error (expected during shutdown): {e}")
+            self.stop_stream()
+        except Exception as e:
+            print(f"Unexpected streaming error: {e}")
+            self.stop_stream()
+
+    @staticmethod
+    def list_audio_devices():
+        try:
+            result = subprocess.run(
+                ['ffmpeg', '-f', 'avfoundation', '-list_devices', 'true', '-i', '""'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            if result.stderr:
+                print("Available devices:")
+                print(result.stderr)
+        except Exception as e:
+            print(f"Note: Unable to list audio devices: {e}")
+            print("This is not critical for video-only streaming.")
+
+# Add this function to draw text with a background for better visibility
+def draw_status_text(screen, text, pos, color=(255, 255, 255), size=16):
+    try:
+        font = pygame.font.Font("assets/NotoSans-Regular.ttf", size)
+    except:
+        font = pygame.font.Font(None, size)
+    
+    # Create background
+    text_surface = font.render(text, True, color)
+    padding = 5
+    bg_rect = pygame.Rect(
+        pos[0] - padding, 
+        pos[1] - padding,
+        text_surface.get_width() + (padding * 2),
+        text_surface.get_height() + (padding * 2)
+    )
+    
+    # Draw semi-transparent background
+    bg_surface = pygame.Surface((bg_rect.width, bg_rect.height))
+    bg_surface.fill((0, 0, 0))
+    bg_surface.set_alpha(128)
+    screen.blit(bg_surface, bg_rect)
+    
+    # Draw text
+    screen.blit(text_surface, pos)
+
+def load_config():
+    try:
+        config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        else:
+            print("Warning: config.json not found. Creating template...")
+            default_config = {"youtube_key": "YOUR_YOUTUBE_KEY_HERE"}
+            with open(config_path, 'w') as f:
+                json.dump(default_config, f, indent=4)
+            return default_config
+    except Exception as e:
+        print(f"Error loading config: {e}")
+        return {"youtube_key": ""}
 
 async def game_loop():
     global screen, GROUND_Y, WINDOW_WIDTH, WINDOW_HEIGHT, ground_shape
@@ -623,9 +733,14 @@ async def game_loop():
                         light_particles.clear()
                 elif event.key == pygame.K_s:  # 'S' key to toggle streaming
                     if not streaming:
-                        # Replace 'YOUR_YOUTUBE_KEY' with actual YouTube stream key
-                        stream_manager.start_stream('YOUR_YOUTUBE_KEY')
-                        streaming = True
+                        config = load_config()
+                        youtube_key = config.get('youtube_key', '')
+                        
+                        if youtube_key and youtube_key != "YOUR_YOUTUBE_KEY_HERE":
+                            stream_manager.start_stream(youtube_key)
+                            streaming = True
+                        else:
+                            print("Please set your YouTube key in config.json")
                     else:
                         stream_manager.stop_stream()
                         streaming = False
@@ -697,6 +812,28 @@ async def game_loop():
             #pygame.time.wait(100)  # Small delay before playing sound
             #gift_drop_sound.play()
 
+        # Draw status information
+        if streaming:
+            current_time = datetime.now().strftime("%H:%M:%S")
+            status_text = f"LIVE - {current_time}"
+            draw_status_text(screen, status_text, (10, 10), color=(255, 50, 50))
+            
+            # Add debug info
+            debug_info = [
+                f"FPS: {int(clock.get_fps())}",
+                f"Resolution: {WINDOW_WIDTH}x{WINDOW_HEIGHT}",
+                f"Audio: {'BlackHole' if pygame.mixer.get_init() else 'None'}"
+            ]
+            
+            for i, info in enumerate(debug_info):
+                draw_status_text(
+                    screen, 
+                    info, 
+                    (10, 40 + (i * 25)), 
+                    color=(200, 200, 200),
+                    size=14
+                )
+
         pygame.display.flip()
         clock.tick(60)
         await asyncio.sleep(0)
@@ -714,4 +851,11 @@ async def main():
     )
 
 if __name__ == "__main__":
+    # Initialize pygame
+    pygame.init()
+    pygame.mixer.init()
+    
+    # List available audio devices (helpful for debugging)
+    StreamManager.list_audio_devices()
+
     asyncio.run(main())
