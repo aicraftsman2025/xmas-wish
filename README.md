@@ -49,8 +49,8 @@ An interactive Christmas-themed display system that combines real-time wish disp
 1. Clone the repository
 git clone [repository-url]
 2. Install dependencies
-    npm install
-    pip install -r requirements.txt
+    # npm install
+    # pip install -r requirements.txt
 3. Run server:
 --node server.js
 
